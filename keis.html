@@ -20,6 +20,7 @@
         <a href="keis.html" class="menu-btn active">Brainrot-drop</a>
         <a href="ilditv.html" class="menu-btn">infa-ilditv</a>
         <a href="upgrade.html" class="menu-btn">Brainrot-upgraider</a>
+        <a href="livespawn.html" class="menu-btn">Live-Drop 🔴</a>
     </div>
 
     <main class="main-content">
@@ -63,12 +64,17 @@
         });
 
         var itemsList = [
-            { id: "lagrande", name: "Ла Гранде", img: "images4.jpg", rarity: "common", weight: 80, sellPrice: 10 },
-            { id: "garama", name: "Гарама", img: "images3.jpg", rarity: "epic", weight: 19, sellPrice: 50 },
+            { id: "lagrande", name: "Ла Гранде", img: "images4.jpg", rarity: "common", weight: 60, sellPrice: 10 },
+            { id: "garama", name: "Гарама", img: "images3.jpg", rarity: "epic", weight: 15, sellPrice: 50 },
+            { id: "item6", name: "БУРГЕР И ФРАЮРО", img: "images6.jpg", rarity: "rare", weight: 20, sellPrice: 67 },
+            { id: "item7", name: "ЛА СЕКРЕТ", img: "images7.jpg", rarity: "mythic", weight: 4, sellPrice: 100 },
             { id: "dragon", name: "Драгон", img: "images5.jpg", rarity: "legendary", weight: 1, sellPrice: 1000 }
         ];
 
-        var balance = parseInt(localStorage.getItem("bal_" + currentUser)) || 1000;
+        // Фикс баланса: жесткая проверка на ноль
+        var savedBalance = localStorage.getItem("bal_" + currentUser);
+        var balance = (savedBalance !== null) ? parseInt(savedBalance) : 1000;
+        
         var inventory = JSON.parse(localStorage.getItem("inv_" + currentUser)) || [];
         var isSpinning = false; var cardWidth = 130; var casePrice = 25;
 
@@ -114,10 +120,10 @@
             for (var i = 0; i < itemsList.length; i++) total += itemsList[i].weight;
             var rn = Math.random() * total;
             for (var j = 0; j < itemsList.length; j++) {
-                if (rn < itemsList[j].weight) return itemsList[j];
+                if (rn < itemsList[j].weight) return JSON.parse(JSON.stringify(itemsList[j]));
                 rn -= itemsList[j].weight;
             }
-            return itemsList;
+            return JSON.parse(JSON.stringify(itemsList[itemsList.length - 1]));
         }
 
         function startSpin(isFast) {
@@ -140,7 +146,7 @@
 
             var pool = [];
             for (var i = 0; i < totalCards; i++) {
-                var it = (i === targetIndex) ? getRandomItem() : itemsList[Math.floor(Math.random() * itemsList.length)];
+                var it = (i === targetIndex) ? getRandomItem() : JSON.parse(JSON.stringify(itemsList[Math.floor(Math.random() * itemsList.length)]));
                 pool.push(it);
                 var card = document.createElement("div");
                 card.className = "card " + it.rarity;
@@ -167,6 +173,11 @@
                 winItemContainer.innerHTML = "<div class='card " + winItem.rarity + "' style='margin:auto;'><img src='" + winItem.img + "'><div class='card-info'>" + winItem.name + "</div></div><p style='color:#ff9900; font-weight:bold; margin-top:10px;'>Цена: " + winItem.sellPrice + " ₴</p>";
                 winModal.classList.remove("hidden");
                 inventory.push(winItem);
+
+                var feed = JSON.parse(localStorage.getItem("global_live_feed")) || [];
+                feed.unshift({ user: currentUser === "guest" ? "Вы (Гость)" : currentUser, name: winItem.name, img: winItem.img, rarity: winItem.rarity, price: winItem.sellPrice });
+                localStorage.setItem("global_live_feed", JSON.stringify(feed));
+
                 saveData();
             }, isFast ? 1100 : 5200);
         }

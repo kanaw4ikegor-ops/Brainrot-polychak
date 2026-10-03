@@ -7,188 +7,120 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
     <header class="site-header">
         <div class="logo">ILDIVSITE</div>
         <div class="user-balance">Баланс: <span id="balance-val">1000</span> ₴</div>
     </header>
-
     <div class="nav-menu-container">
         <a href="keis.html" class="menu-btn">Brainrot-drop</a>
         <a href="ilditv.html" class="menu-btn">infa-ilditv</a>
         <a href="upgrade.html" class="menu-btn active">Brainrot-upgraider</a>
+        <a href="livespawn.html" class="menu-btn">Live-Drop 🔴</a>
     </div>
-
     <main class="main-content">
         <section class="tab-section">
-            <h1>Brainrot-upgraider ⚡</h1>
-            <p>Выбери любого персонажа из инвентаря и цель улучшения!</p>
-            
-            <div class="upgrade-panel">
-                <!-- Слот слева (крутится при апгрейде) -->
-                <div class="upgrade-slot" id="slot-input">
-                    <p>Выбери предмет ниже</p>
+            <h1 class="main-title">Brainrot Upgraider ⚡</h1>
+            <p class="subtitle">Пожертвуй мем-карточку ради шанса получить более жесткий брэйнрот!</p>
+            <div class="upgrade-area-container">
+                <div class="upgrade-card-box" id="slot-input"><div class="slot-placeholder">Выбери предмет ниже</div></div>
+                <div class="cs-radar-wrapper">
+                    <div class="radar-pointer"></div>
+                    <div class="radar-circle" id="radar-wheel"><div class="radar-center-text" id="chance-text">0%</div></div>
                 </div>
-                <!-- Стрелка посередине (пульсирует при апгрейде) -->
-                <div class="upgrade-arrows" id="arrow-element">➔</div>
-                <!-- Слот справа (показывает цель и тоже крутится) -->
-                <div class="upgrade-slot" id="slot-output" style="border: 2px dashed #444; color: #7e7e8f;">
-                    <p>Цель крафта</p>
-                </div>
+                <div class="upgrade-card-box target-box" id="slot-output"><div class="slot-placeholder">Цель улучшения</div></div>
             </div>
-
-            <div style="margin-top: 15px;" class="upgrade-targets">
-                <button class="target-btn" id="btn-lagrande" onclick="selectTarget('lagrande', this)">на Ла Гранде</button>
-                <button class="target-btn" id="btn-garama" onclick="selectTarget('garama', this)">на Гараму</button>
-                <button class="target-btn" id="btn-dragon" onclick="selectTarget('dragon', this)">на Драгона</button>
+            <div class="target-selection-title">Выберите цель улучшения:</div>
+            <div class="upgrade-targets">
+                <button class="target-btn" id="btn-lagrande" onclick="selectTarget('lagrande', this)">Ла Гранде</button>
+                <button class="target-btn" id="btn-garama" onclick="selectTarget('garama', this)">Гарама</button>
+                <button class="target-btn" id="btn-item6" onclick="selectTarget('item6', this)">БУРГЕР И ФРАЮРО</button>
+                <button class="target-btn" id="btn-item7" onclick="selectTarget('item7', this)">ЛА СЕКРЕТ</button>
+                <button class="target-btn" id="btn-dragon" onclick="selectTarget('dragon', this)">Драгон</button>
             </div>
-
-            <div id="chance-display" style="margin-top: 20px; font-size: 18px; font-weight: bold; color: #ff9900;">
-                Шанс апгрейда: -- %
+            <div class="action-zone">
+                <button id="start-upgrade-btn" class="spin-button main-action" disabled>ЗАПУСТИТЬ АПГРЕЙД</button>
+                <h3 id="upgrade-status"></h3>
             </div>
-
-            <button id="start-upgrade-btn" class="spin-button main-action" style="margin-top: 15px;" disabled>Запустить Апгрейд</button>
-            <h3 id="upgrade-status" style="margin-top: 15px; color:#ff9900;"></h3>
-
-            <div class="inventory-section" style="width: 100%;">
+            <div class="inventory-section">
                 <h3>Ваш инвентарь для улучшения:</h3>
                 <div id="upgrade-inv-grid" class="inventory-grid"></div>
             </div>
         </section>
     </main>
-
     <script>
         var currentUser = localStorage.getItem("ildiv_logged_in") || "guest";
-
-        var balance = parseInt(localStorage.getItem("bal_" + currentUser)) || 1000;
-        var inventory = JSON.parse(localStorage.getItem("inv_" + currentUser)) || [];
         
-        var selectedIndex = null;
-        var selectedItem = null;
-        var selectedTargetId = null;
-        var currentCalculatedChance = 0;
-
-        var invGrid = document.getElementById("upgrade-inv-grid");
-        var slotInput = document.getElementById("slot-input");
-        var slotOutput = document.getElementById("slot-output");
-        var arrowElement = document.getElementById("arrow-element");
-        var upgradeBtn = document.getElementById("start-upgrade-btn");
-        var statusText = document.getElementById("upgrade-status");
-        var chanceDisplay = document.getElementById("chance-display");
+        // Фикс баланса: жесткая проверка на ноль
+        var savedBalance = localStorage.getItem("bal_" + currentUser);
+        var balance = (savedBalance !== null) ? parseInt(savedBalance) : 1000;
+        
+        var inventory = JSON.parse(localStorage.getItem("inv_" + currentUser)) || [];
+        var selectedIndex = null, selectedItem = null, selectedTargetId = null, currentCalculatedChance = 0, isUpgrading = false;
+        var invGrid = document.getElementById("upgrade-inv-grid"), slotInput = document.getElementById("slot-input"), slotOutput = document.getElementById("slot-output");
+        var radarWheel = document.getElementById("radar-wheel"), chanceText = document.getElementById("chance-text"), upgradeBtn = document.getElementById("start-upgrade-btn"), statusText = document.getElementById("upgrade-status");
 
         var targetObjects = {
             lagrande: { id: "lagrande", name: "Ла Гранде", img: "images4.jpg", rarity: "common", sellPrice: 10 },
             garama: { id: "garama", name: "Гарама", img: "images3.jpg", rarity: "epic", sellPrice: 50 },
+            item6: { id: "item6", name: "БУРГЕР И ФРАЮРО", img: "images6.jpg", rarity: "rare", sellPrice: 67 },
+            item7: { id: "item7", name: "ЛА СЕКРЕТ", img: "images7.jpg", rarity: "mythic", sellPrice: 100 },
             dragon: { id: "dragon", name: "Драгон", img: "images5.jpg", rarity: "legendary", sellPrice: 1000 }
         };
 
-        function saveData() {
-            localStorage.setItem("bal_" + currentUser, balance);
-            localStorage.setItem("inv_" + currentUser, JSON.stringify(inventory));
-        }
-
+        function saveData() { localStorage.setItem("bal_" + currentUser, balance); localStorage.setItem("inv_" + currentUser, JSON.stringify(inventory)); }
         function updateUI() {
-            document.getElementById("balance-val").textContent = balance;
-            invGrid.innerHTML = "";
-            
-            if (inventory.length === 0) {
-                invGrid.innerHTML = "<p style='color:#7e7e8f;'>Ваш инвентарь пуст.</p>";
-                return;
-            }
-
+            document.getElementById("balance-val").textContent = balance; invGrid.innerHTML = inventory.length === 0 ? "<p style='color:#7e7e8f;'>Ваш инвентарь пуст.</p>" : "";
             inventory.forEach(function(item, index) {
-                var card = document.createElement("div");
-                card.className = "inventory-card " + item.rarity + (selectedIndex === index ? " selected-card" : "");
-                card.innerHTML = "<img src='" + item.img + "'><div class='inv-name'>" + item.name + "</div>";
-                card.onclick = function() { selectItem(index, item); };
-                invGrid.appendChild(card);
+                var card = document.createElement("div"); card.className = "inventory-card " + item.rarity + (selectedIndex === index ? " selected-card" : "");
+                card.innerHTML = "<img src='" + item.img + "'><div class='inv-name'>" + item.name + "</div><div class='inv-price-tag'>" + item.sellPrice + " ₴</div>";
+                card.onclick = function() { if(!isUpgrading) selectItem(index, item); }; invGrid.appendChild(card);
             });
         }
-
         function selectItem(index, item) {
-            selectedIndex = index;
-            selectedItem = item;
-            slotInput.innerHTML = "<div class='card " + item.rarity + "' style='margin:0; border:none;'><img src='" + item.img + "'><div class='card-info'>" + item.name + "</div></div>";
-            calculateChance();
-            updateUI();
+            selectedIndex = index; selectedItem = item; statusText.textContent = ""; calculateChance(); updateUI();
+            slotInput.innerHTML = "<div class='card " + item.rarity + "' style='margin:0; width:100%; height:100%;'><img src='" + item.img + "'><div class='card-info'>" + item.name + "</div></div>";
         }
-
         function selectTarget(targetId, btn) {
-            selectedTargetId = targetId;
-            document.querySelectorAll(".target-btn").forEach(function(b) { b.classList.remove("selected-target"); });
-            btn.classList.add("selected-target");
-            
-            var targetItem = targetObjects[targetId];
-            slotOutput.innerHTML = "<div class='card " + targetItem.rarity + "' style='margin:0; border:none;'><img src='" + targetItem.img + "'><div class='card-info'>" + targetItem.name + "</div></div>";
-            
-            calculateChance();
+            if (isUpgrading) return; selectedTargetId = targetId; document.querySelectorAll(".target-btn").forEach(function(b) { b.classList.remove("selected-target"); }); btn.classList.add("selected-target");
+            slotOutput.innerHTML = "<div class='card " + targetObjects[targetId].rarity + "' style='margin:0; width:100%; height:100%;'><img src='" + targetObjects[targetId].img + "'><div class='card-info'>" + targetObjects[targetId].name + "</div></div>"; statusText.textContent = ""; calculateChance();
         }
-
         function calculateChance() {
-            if (!selectedItem || !selectedTargetId) {
-                chanceDisplay.textContent = "Шанс апгрейда: -- %";
-                upgradeBtn.disabled = true;
-                return;
-            }
-
-            var inputPrice = selectedItem.sellPrice;
-            var targetPrice = targetObjects[selectedTargetId].sellPrice;
-
-            if (inputPrice >= targetPrice) {
-                currentCalculatedChance = 100;
-            } else {
-                if (selectedItem.id === "lagrande" && selectedTargetId === "garama") currentCalculatedChance = 35;
-                else if (selectedItem.id === "lagrande" && selectedTargetId === "dragon") currentCalculatedChance = 1; 
-                else if (selectedItem.id === "garama" && selectedTargetId === "dragon") currentCalculatedChance = 5;   
-                else currentCalculatedChance = Math.floor((inputPrice / targetPrice) * 100);
-            }
-
-            chanceDisplay.textContent = "Шанс апгрейда: " + currentCalculatedChance + "%";
-            upgradeBtn.disabled = false;
+            if (!selectedItem || !selectedTargetId) { chanceText.textContent = "0%"; radarWheel.style.background = "#222232"; upgradeBtn.disabled = true; return; }
+            var inputPrice = selectedItem.sellPrice, targetPrice = targetObjects[selectedTargetId].sellPrice;
+            if (inputPrice >= targetPrice) currentCalculatedChance = 100;
+            else if (selectedItem.id === "lagrande" && selectedTargetId === "garama") currentCalculatedChance = 35;
+            else if (selectedItem.id === "lagrande" && selectedTargetId === "dragon") currentCalculatedChance = 1; 
+            else if (selectedItem.id === "garama" && selectedTargetId === "dragon") currentCalculatedChance = 5;   
+            else currentCalculatedChance = Math.min(100, Math.floor((inputPrice / targetPrice) * 100));
+            chanceText.textContent = currentCalculatedChance + "%"; var deg = (currentCalculatedChance / 100) * 360;
+            radarWheel.style.background = "conic-gradient(#28a745 0deg " + deg + "deg, #2d2d3f " + deg + "deg 360deg)"; upgradeBtn.disabled = false;
         }
-
+        function resetSelection(clearTarget) {
+            selectedIndex = null; selectedItem = null;
+            if (clearTarget) { selectedTargetId = null; slotOutput.innerHTML = "<div class='slot-placeholder'>Цель улучшения</div>"; document.querySelectorAll(".target-btn").forEach(function(b) { b.classList.remove("selected-target"); }); }
+        }
         upgradeBtn.onclick = function() {
-            if (selectedIndex === null || !selectedTargetId) return;
-            upgradeBtn.disabled = true;
-            statusText.textContent = "Скрещивание брэйнрот матриц... ⚡";
-
-            // ВКЛЮЧАЕМ АНИМАЦИЮ КРУЧЕНИЯ ДЛЯ СЛОТОВ И СТРЕЛКИ
-            slotInput.classList.add("spin-active");
-            slotOutput.classList.add("spin-active");
-            arrowElement.classList.add("arrow-active");
-
+            if (selectedIndex === null || !selectedTargetId || isUpgrading) return;
+            isUpgrading = true; upgradeBtn.disabled = true; statusText.innerHTML = "<span style='color:#aaa;'>Синхронизация брэйнрот частот... ⚡</span>";
+            var targetItem = targetObjects[selectedTargetId], successDegrees = (currentCalculatedChance / 100) * 360, isSuccess = (Math.random() * 100) <= currentCalculatedChance;
+            var finalAngle = isSuccess ? (Math.random() * (successDegrees - 4) + 2) : (Math.random() * (356 - successDegrees) + successDegrees + 2);
+            radarWheel.style.transition = "transform 4s cubic-bezier(0.1, 0.8, 0.15, 1)"; radarWheel.style.transform = "rotate(-" + (1800 + finalAngle) + "deg)";
             setTimeout(function() {
-                var rand = Math.random() * 100;
-                var isSuccess = rand <= currentCalculatedChance;
-                var targetItem = targetObjects[selectedTargetId];
-
-                // ОТКЛЮЧАЕМ АНИМАЦИЮ КРУЧЕНИЯ
-                slotInput.classList.remove("spin-active");
-                slotOutput.classList.remove("spin-active");
-                arrowElement.classList.remove("arrow-active");
-
                 inventory.splice(selectedIndex, 1);
-
                 if (isSuccess) {
-                    inventory.push(targetItem);
-                    statusText.innerHTML = "<span style='color:#4caf50;'>УСПЕХ! Получен: " + targetItem.name + " 🎉</span>";
-                    slotInput.innerHTML = "<p>Выбери предмет</p>";
-                    slotOutput.innerHTML = "<div class='card " + targetItem.rarity + "' style='margin:0; border:none;'><img src='" + targetItem.img + "'><div class='card-info'>" + targetItem.name + "</div></div>";
+                    inventory.push(targetItem); statusText.innerHTML = "<span class='status-success'>УСПЕХ! Скрафчен: " + targetItem.name + " 🎉</span>";
+                    
+                    var feed = JSON.parse(localStorage.getItem("global_live_feed")) || [];
+                    feed.unshift({ user: currentUser === "guest" ? "Вы (Гость)" : currentUser, name: targetItem.name, img: targetItem.img, rarity: targetItem.rarity, price: targetItem.sellPrice });
+                    localStorage.setItem("global_live_feed", JSON.stringify(feed));
+
+                    slotInput.innerHTML = "<div class='card " + targetItem.rarity + "' style='margin:0; width:100%; height:100%;'><img src='" + targetItem.img + "'><div class='card-info'>" + targetItem.name + "</div></div>"; resetSelection(true);
                 } else {
-                    statusText.innerHTML = "<span style='color:#eb4b4b;'>НЕУДАЧА! Предмет безвозвратно сгорел. ❌</span>";
-                    slotInput.innerHTML = "<p>Выбери предмет</p>";
-                    slotOutput.innerHTML = "<p>Цель крафта</p>";
+                    statusText.innerHTML = "<span class='status-fail'>НЕУДАЧА! Матрица сгорела дотла 😢</span>"; slotInput.innerHTML = "<div class='slot-placeholder'>Выбери предмет ниже</div>"; resetSelection(false);
                 }
-
-                selectedIndex = null; selectedItem = null; selectedTargetId = null;
-                document.querySelectorAll(".target-btn").forEach(function(b) { b.classList.remove("selected-target"); });
-                
-                calculateChance();
-                saveData();
-                updateUI();
-            }, 2000); // Крутится ровно 2 секунды
+                setTimeout(function() { radarWheel.style.transition = "none"; radarWheel.style.transform = "rotate(0deg)"; isUpgrading = false; saveData(); updateUI(); calculateChance(); }, 1500);
+            }, 4000);
         };
-
         updateUI();
     </script>
 </body>
