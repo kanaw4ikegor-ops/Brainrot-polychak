@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BRAINROT-POLYCHAK — Авторизация</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #121316;
+            font-family: 'Segoe UI', sans-serif;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .welcome-container {
+            text-align: center;
+            background-color: #1a1c20;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+            border: 1px solid #2a2d34;
+            max-width: 400px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            background: linear-gradient(45deg, #ff9900, #ff5500);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            color: #a0a5b0;
+            font-size: 0.95rem;
+            margin-bottom: 25px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #a0a5b0;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 16px;
+            background-color: #121316;
+            border: 1px solid #2a2d34;
+            border-radius: 6px;
+            color: #ffffff;
+            font-size: 1rem;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #ff6600;
+        }
+
+        .btn {
+            width: 100%;
+            background-color: #ff6600;
+            color: #ffffff;
+            border: none;
+            padding: 14px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            box-shadow: 0 4px 12px rgba(255, 102, 0, 0.3);
+            text-transform: uppercase;
+            margin-top: 10px;
+        }
+
+        .btn:hover { background-color: #ff7711; }
+        .btn:active { transform: scale(0.98); }
+
+        .toggle-text {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: #a0a5b0;
+        }
+
+        .toggle-text span {
+            color: #ff6600;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        .error-msg {
+            color: #ff3333;
+            font-size: 0.85rem;
+            margin-top: 10px;
+            display: none;
+        }
+
+        /* Экран приветствия после успешного входа */
+        #welcome-screen {
+            display: none;
+        }
+        
+        .btn-cases {
+            display: inline-block;
+            background-color: #ff6600;
+            color: #ffffff;
+            padding: 14px 28px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 6px;
+            text-decoration: none;
+            box-shadow: 0 4px 12px rgba(255, 102, 0, 0.3);
+            margin-top: 20px;
+            transition: background-color 0.2s;
+        }
+        .btn-cases:hover { background-color: #ff7711; }
+    </style>
+</head>
+<body>
+
+    <div class="welcome-container">
+        <!-- БЛОК АВТОРИЗАЦИИ (ВХОД / РЕГИСТРАЦИЯ) -->
+        <div id="auth-block">
+            <h1 id="auth-title">Вход</h1>
+            <p class="subtitle" id="auth-subtitle">Войдите в свой аккаунт BRAINROT</p>
+
+            <div class="input-group">
+                <label for="username">Логин (или Gmail)</label>
+                <input type="text" id="username" placeholder="Введите логин">
+            </div>
+            
+            <div class="input-group">
+                <label for="password">Пароль</label>
+                <input type="password" id="password" placeholder="Введите пароль">
+            </div>
+
+            <button class="btn" id="submit-btn" onclick="handleAuth()">Войти</button>
+            <p class="error-msg" id="error-box">Ошибка</p>
+
+            <p class="toggle-text" id="toggle-wrapper">
+                Еще нет аккаунта? <span onclick="switchMode()">Зарегистрироваться</span>
+            </p>
+        </div>
+
+        <!-- БЛОК ПРИВЕТСТВИЯ (ПОСЛЕ УСПЕШНОГО ВХОДА) -->
+        <div id="welcome-screen">
+            <h1>BRAINROT-POLYCHAK</h1>
+            <p class="subtitle" id="welcome-user" style="color: #00ff66; font-weight: bold;"></p>
+            <a href="keis.html" class="btn-cases">ПЕРЕЙТИ К КЕЙСАМ</a>
+        </div>
+    </div>
+
+    <script>
+        // Режим по умолчанию: login (вход). Может быть: register (регистрация)
+        let mode = 'login'; 
+
+        // Переключение между Входом и Регистрацией
+        function switchMode() {
+            const title = document.getElementById('auth-title');
+            const subtitle = document.getElementById('auth-subtitle');
+            const btn = document.getElementById('submit-btn');
+            const toggleWrapper = document.getElementById('toggle-wrapper');
+            const errorBox = document.getElementById('error-box');
+            
+            errorBox.style.display = 'none';
+
+            if (mode === 'login') {
+                mode = 'register';
+                title.textContent = 'Регистрация';
+                subtitle.textContent = 'Создайте новый аккаунт';
+                btn.textContent = 'Создать аккаунт';
+                toggleWrapper.innerHTML = 'Уже есть аккаунт? <span onclick="switchMode()">Войти</span>';
+            } else {
+                mode = 'login';
+                title.textContent = 'Вход';
+                subtitle.textContent = 'Войдите в свой аккаунт BRAINROT';
+                btn.textContent = 'Войти';
+                toggleWrapper.innerHTML = 'Еще нет аккаунта? <span onclick="span onclick="switchMode()">Зарегистрироваться</span>';
+            }
+        }
+
+        // Логика обработки кнопок
+        function handleAuth() {
+            const user = document.getElementById('username').value.trim();
+            const pass = document.getElementById('password').value.trim();
+            const errorBox = document.getElementById('error-box');
+
+            if (!user || !pass) {
+                showError('Заполните все поля!');
+                return;
+            }
+
+            if (mode === 'register') {
+                // ПРОВЕРКА: существует ли уже такой пользователь
+                if (localStorage.getItem(`user_${user}`)) {
+                    showError('Этот логин уже занят!');
+                    return;
+                }
+                // СОХРАНЕНИЕ: записываем пароль в браузер под ключом пользователя
+                localStorage.setItem(`user_${user}`, pass);
+                showWelcome(user, 'Регистрация успешна!');
+            } else {
+                // ВХОД: проверяем сохраненный пароль
+                const savedPassword = localStorage.getItem(`user_${user}`);
+                if (savedPassword && savedPassword === pass) {
+                    showWelcome(user, 'С возвращением!');
+                } else {
+                    showError('Неверный логин или пароль!');
+                }
+            }
+        }
+
+        function showError(text) {
+            const errorBox = document.getElementById('error-box');
+            errorBox.textContent = text;
+            errorBox.style.display = 'block';
+        }
+
+        // Показ финального экрана с кнопкой "Перейти к кейсам"
+        function showWelcome(username, message) {
+            document.getElementById('auth-block').style.display = 'none';
+            document.getElementById('welcome-screen').style.display = 'block';
+            document.getElementById('welcome-user').textContent = `${message} Аккаунт: ${username}`;
+            
+            // Дополнительно: сохраняем сессию активного юзера, чтобы keis.html знал, кто зашел
+            localStorage.setItem('active_session', username);
+        }
+    </script>
+</body>
+</html>

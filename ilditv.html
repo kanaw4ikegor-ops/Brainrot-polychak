@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>infa-ilditv - Информация</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header class="site-header">
+        <div class="logo">ILDIVSITE</div>
+        <div class="user-balance">Баланс: <span id="balance-val">1000</span> ₴</div>
+    </header>
+
+    <div class="nav-menu-container">
+        <a href="keis.html" class="menu-btn">Brainrot-drop</a>
+        <a href="ilditv.html" class="menu-btn active">infa-ilditv</a>
+        <a href="upgrade.html" class="menu-btn">Brainrot-upgraider</a>
+    </div>
+
+    <main class="main-content">
+        <section class="tab-section">
+            <div class="wiki" style="text-align: left; width: 100%;">
+                <h1 style="color: #ff9900; margin-top: 0;">Информационный портал infa-ilditv</h1>
+                <p>Добро пожаловать на главный сайт, полностью посвященный стримеру <strong>Ильди ТВ (Ildi TV)</strong>!</p>
+                <h3>Наши персонажи и их ценность при продаже:</h3>
+                <ul style="line-height: 1.8; color: #b5b5c3; padding-left: 20px;">
+                    <li>🟢 <strong style="color:#b0c3d9;">Ла Гранде</strong> — Обычный брейни. Стоит 10 монет.</li>
+                    <li>🟣 <strong style="color:#8847ff;">Гарама</strong> — Эпический брейни. Стоит 50 монет.</li>
+                    <li>🔴 <strong style="color:#eb4b4b;">Драгон</strong> — Секретное бешенство! Стоит целых 1000 монет!</li>
+                </ul>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        var currentUser = localStorage.getItem("ildiv_logged_in") || "guest";
+        var balance = localStorage.getItem("bal_" + currentUser) || 1000;
+        document.getElementById("balance-val").textContent = balance;
+    </script>
+</body>
+</html>

@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brainrot-drop - Кейсы</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header class="site-header">
+        <div class="logo">ILDIVSITE</div>
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <div class="user-balance">Баланс: <span id="balance-val">1000</span> ₴</div>
+            <button id="logout-btn">Выйти</button>
+        </div>
+    </header>
+
+    <div class="nav-menu-container">
+        <a href="keis.html" class="menu-btn active">Brainrot-drop</a>
+        <a href="ilditv.html" class="menu-btn">infa-ilditv</a>
+        <a href="upgrade.html" class="menu-btn">Brainrot-upgraider</a>
+    </div>
+
+    <main class="main-content">
+        <section class="tab-section">
+            <h2>Фирменный Фан Кейс (Цена: 25 ₴)</h2>
+            <div class="action-buttons-container">
+                <button id="spin-btn" class="spin-button main-action">Крутить кейс</button>
+                <button id="extra-btn" class="spin-button extra-action">Быстрое открытие</button>
+            </div>
+            <div class="case-container">
+                <div id="case-preview" class="case-preview">
+                    <img src="keis.jpg">
+                    <h3>ФАН КЕЙС</h3>
+                </div>
+                <div id="roulette-wrapper" class="roulette-wrapper hidden">
+                    <div class="pointer"></div>
+                    <div class="roulette" id="roulette"></div>
+                </div>
+            </div>
+            <div class="inventory-section">
+                <h3>Ваш Инвентарь (Кликни для продажи)</h3>
+                <div id="inventory-grid" class="inventory-grid"></div>
+            </div>
+        </section>
+    </main>
+
+    <div id="win-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Вы залутали:</h3>
+            <div id="win-item-container"></div>
+            <button id="close-modal-btn">Забрать</button>
+        </div>
+    </div>
+
+    <script>
+        var currentUser = localStorage.getItem("ildiv_logged_in") || "guest";
+
+        document.getElementById("logout-btn").addEventListener("click", function() {
+            localStorage.removeItem("ildiv_logged_in");
+            window.location.href = "index.html";
+        });
+
+        var itemsList = [
+            { id: "lagrande", name: "Ла Гранде", img: "images4.jpg", rarity: "common", weight: 80, sellPrice: 10 },
+            { id: "garama", name: "Гарама", img: "images3.jpg", rarity: "epic", weight: 19, sellPrice: 50 },
+            { id: "dragon", name: "Драгон", img: "images5.jpg", rarity: "legendary", weight: 1, sellPrice: 1000 }
+        ];
+
+        var balance = parseInt(localStorage.getItem("bal_" + currentUser)) || 1000;
+        var inventory = JSON.parse(localStorage.getItem("inv_" + currentUser)) || [];
+        var isSpinning = false; var cardWidth = 130; var casePrice = 25;
+
+        var spinBtn = document.getElementById("spin-btn");
+        var extraBtn = document.getElementById("extra-btn");
+        var casePreview = document.getElementById("case-preview");
+        var rouletteWrapper = document.getElementById("roulette-wrapper");
+        var roulette = document.getElementById("roulette");
+        var winModal = document.getElementById("win-modal");
+        var winItemContainer = document.getElementById("win-item-container");
+        var closeModalBtn = document.getElementById("close-modal-btn");
+        var balanceVal = document.getElementById("balance-val");
+        var inventoryGrid = document.getElementById("inventory-grid");
+
+        function saveData() {
+            localStorage.setItem("bal_" + currentUser, balance);
+            localStorage.setItem("inv_" + currentUser, JSON.stringify(inventory));
+        }
+
+        function updateUI() {
+            balanceVal.textContent = balance;
+            inventoryGrid.innerHTML = "";
+            if (inventory.length === 0) {
+                inventoryGrid.innerHTML = "<p style='color:#7e7e8f;'>Инвентарь пуст.</p>";
+                return;
+            }
+            inventory.forEach(function(item, index) {
+                var div = document.createElement("div");
+                div.className = "inventory-card " + item.rarity;
+                div.innerHTML = "<img src='" + item.img + "'><div class='inv-name'>" + item.name + "</div><div class='inv-sell'>Продать (+" + item.sellPrice + " ₴)</div>";
+                div.onclick = function() {
+                    balance += item.sellPrice;
+                    inventory.splice(index, 1);
+                    saveData();
+                    updateUI();
+                };
+                inventoryGrid.appendChild(div);
+            });
+        }
+
+        function getRandomItem() {
+            var total = 0;
+            for (var i = 0; i < itemsList.length; i++) total += itemsList[i].weight;
+            var rn = Math.random() * total;
+            for (var j = 0; j < itemsList.length; j++) {
+                if (rn < itemsList[j].weight) return itemsList[j];
+                rn -= itemsList[j].weight;
+            }
+            return itemsList;
+        }
+
+        function startSpin(isFast) {
+            if (isSpinning) return;
+            if (balance < casePrice) return alert("Нет денег!");
+
+            balance -= casePrice;
+            saveData();
+            balanceVal.textContent = balance;
+
+            isSpinning = true;
+            spinBtn.disabled = true; extraBtn.disabled = true;
+            casePreview.classList.add("hidden"); rouletteWrapper.classList.remove("hidden");
+
+            var totalCards = 45;
+            var targetIndex = isFast ? 15 : 38;
+            roulette.innerHTML = "";
+            roulette.style.transition = "none";
+            roulette.style.transform = "translateX(0px)";
+
+            var pool = [];
+            for (var i = 0; i < totalCards; i++) {
+                var it = (i === targetIndex) ? getRandomItem() : itemsList[Math.floor(Math.random() * itemsList.length)];
+                pool.push(it);
+                var card = document.createElement("div");
+                card.className = "card " + it.rarity;
+                card.innerHTML = "<img src='" + it.img + "'><div class='card-info'>" + it.name + "</div>";
+                roulette.appendChild(card);
+            }
+
+            var winItem = pool[targetIndex];
+
+            setTimeout(function() {
+                var wWidth = rouletteWrapper.offsetWidth;
+                var pos = (targetIndex * cardWidth) - (wWidth / 2) + (cardWidth / 2);
+                if (isFast) {
+                    roulette.style.transition = "transform 1s ease-out";
+                    roulette.style.transform = "translateX(-" + pos + "px)";
+                } else {
+                    roulette.style.transition = "transform 5s cubic-bezier(0.1, 0.8, 0.1, 1)";
+                    var offset = Math.floor(Math.random() * 40) - 20;
+                    roulette.style.transform = "translateX(-" + (pos + offset) + "px)";
+                }
+            }, 50);
+
+            setTimeout(function() {
+                winItemContainer.innerHTML = "<div class='card " + winItem.rarity + "' style='margin:auto;'><img src='" + winItem.img + "'><div class='card-info'>" + winItem.name + "</div></div><p style='color:#ff9900; font-weight:bold; margin-top:10px;'>Цена: " + winItem.sellPrice + " ₴</p>";
+                winModal.classList.remove("hidden");
+                inventory.push(winItem);
+                saveData();
+            }, isFast ? 1100 : 5200);
+        }
+
+        spinBtn.onclick = function() { startSpin(false); };
+        extraBtn.onclick = function() { startSpin(true); };
+
+        closeModalBtn.onclick = function() {
+            winModal.classList.add("hidden");
+            casePreview.classList.remove("hidden");
+            rouletteWrapper.classList.add("hidden");
+            isSpinning = false; spinBtn.disabled = false; extraBtn.disabled = false;
+            updateUI();
+        };
+
+        updateUI();
+    </script>
+</body>
+</html>
